@@ -21,7 +21,7 @@ def _get_special_methods():
             for format in ['json', 'yaml']:
                 methods.append(action + mode + '_' + format)
     protected = ['builtin_' + m for m in methods]
-    return methods + protected, protected
+    return methods, protected
 
 
 _BeneDict_NATIVE_METHODS, _BeneDict_PROTECTED_METHODS = _get_special_methods()
@@ -130,31 +130,39 @@ class BeneDict(dict):
     ['height', 'power']
     """
     def __init__(self, d=None, **kwargs):
+        super(BeneDict, self).__init__()
         if d is None:
             d = {}
         if kwargs:
             dict.update(d, **kwargs)
         for k, v in dict.items(d):
-            setattr(self, k, v)
+            self.__setattr__(k, v)
         # Class attributes
-        for k in self.__class__.__dict__.keys():
-            if not (k.startswith('__') and k.endswith('__')
-                    or k in _BeneDict_NATIVE_METHODS):
-                setattr(self, k, getattr(self, k))
+        cls = self.__class__
+        for k in cls.__dict__.keys():
+            if not k.startswith('__'):
+                cls_attr = getattr(cls, k)
+                if k in _BeneDict_PROTECTED_METHODS and cls_attr == getattr(BeneDict, k):
+                    # user didn't override the protected methods (`builtin_foo`)
+                    continue
+                self.__setattr__(k, getattr(cls, k))
 
     def __setattr__(self, name, value):
+        # cls = self.__class__  # carry over inherited class from BeneDict
+        cls = BeneDict
         if name in _BeneDict_PROTECTED_METHODS:
             raise ValueError('Cannot override `{}`: BeneDict protected method'
                              .format(name))
         if isinstance(value, (list, tuple)):
-            value = [self.__class__(x)
-                     if isinstance(x, dict) else x for x in value]
+            value = type(value)(cls(x) if isinstance(x, dict) else x
+                                for x in value)
         elif isinstance(value, dict):
             # implements deepcopy if BeneDict(BeneDict())
             # to make it shallow copy, add the following condition:
             # ...  and not isinstance(value, self.__class__)):
-            value = self.__class__(value)
-        super(BeneDict, self).__setattr__(name, value)
+            value = cls(value)
+        if isinstance(name, str):  # support non-string keys
+            super(BeneDict, self).__setattr__(name, value)
         super(BeneDict, self).__setitem__(name, value)
 
     __setitem__ = __setattr__
@@ -163,7 +171,7 @@ class BeneDict(dict):
         """
         Convert to raw dict
         """
-        return ezdict_to_dict(self)
+        return benedict_to_dict(self)
 
     def deepcopy(self):
         return BeneDict(self)
@@ -191,17 +199,17 @@ class BeneDict(dict):
     def dump_json(self, file_path):
         file_path = expanduser(file_path)
         with open(file_path, 'w') as fp:
-            json.dump(ezdict_to_dict(self), fp, indent=4)
+            json.dump(benedict_to_dict(self), fp, indent=4)
 
     def dumps_json(self):
         "Returns: string"
-        return json.dumps(ezdict_to_dict(self))
+        return json.dumps(benedict_to_dict(self))
 
     def dump_yaml(self, file_path):
         file_path = expanduser(file_path)
         with open(file_path, 'w') as fp:
             yaml.dump(
-                ezdict_to_dict(self),
+                benedict_to_dict(self),
                 stream=fp,
                 indent=2,
                 default_flow_style=False
@@ -211,7 +219,7 @@ class BeneDict(dict):
         "Returns: string"
         stream = StringIO()
         yaml.dump(
-            ezdict_to_dict(self),
+            benedict_to_dict(self),
             stream,
             default_flow_style=False,
             indent=2
@@ -232,8 +240,10 @@ class BeneDict(dict):
         self.__init__(state)
 
     def __str__(self):
-        return str(ezdict_to_dict(self))
+        return str(benedict_to_dict(self))
 
+    # we explicitly list them here so that IDEs like PyCharm can do auto-complete
+    # call _print_protected_methods() to generate this code
     builtin_keys = dict.keys
     builtin_items = dict.items
     builtin_values = dict.values
@@ -254,17 +264,17 @@ class BeneDict(dict):
     builtin_dump_yaml = dump_yaml
 
 
-def ezdict_to_dict(easy_dict):
+def benedict_to_dict(easy_dict):
     """
     Recursively convert back to builtin dict type
     """
     d = {}
     for k, value in dict.items(easy_dict):
         if isinstance(value, BeneDict):
-            d[k] = ezdict_to_dict(value)
+            d[k] = benedict_to_dict(value)
         elif isinstance(value, (list, tuple)):
             d[k] = type(value)(
-                ezdict_to_dict(v)
+                benedict_to_dict(v)
                 if isinstance(v, BeneDict)
                 else v for v in value
             )
@@ -274,8 +284,17 @@ def ezdict_to_dict(easy_dict):
 
 
 def _add_protected_methods():
+    "unnecessary if the protected methods are explicitly listed in the class def"
     for protected, normal in zip(_BeneDict_PROTECTED_METHODS,
                                  _BeneDict_NATIVE_METHODS):
         setattr(BeneDict, protected, getattr(BeneDict, normal))
 
-_add_protected_methods()
+
+def _print_protected_methods():
+    "paste the generated code into BeneDict class for PyCharm convenience"
+    for i, (protected, normal) in enumerate(zip(_BeneDict_PROTECTED_METHODS,
+                                                _BeneDict_NATIVE_METHODS)):
+        if i < 8:
+            normal = 'dict.' + normal
+        print('{} = {}'.format(protected, normal))
+
