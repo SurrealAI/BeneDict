@@ -4,7 +4,7 @@ from benedict import (
 )
 
 
-_print_protected_methods()
+# _print_protected_methods()
 
 
 TESTDICT = {
@@ -32,27 +32,9 @@ TESTDICT = {
 }
 
 
-class MyClass(BeneDict):
-    a0 = [
-        {'a1': 2},
-        {'b1': 3},
-        {'c1': 6},
-        {'?': 7}
-    ]
-    b0 = {
-        'c1': [
-            {'a2': 11},
-            {'b2': 13},
-            {-13: 'yo'},
-            {-15: {'a3': 'yo'}},
-            15
-        ],
-        'd1': {'e2': 100},
-        '*&': {'e2': 104},
-        -10: {'e2': 106},
-        '_a1': 108
-    }
-    _c0 = (200, 300, 400)
+class ConfigDict(BeneDict):
+    def show_config(self):
+        print('ConfigDict method', self.to_dict())
 
 
 class TestBuiltin(BeneDict):
@@ -60,6 +42,7 @@ class TestBuiltin(BeneDict):
     items = 5
     get = 8
     a1 = 10
+    # builtin_update = 3
 
 
 def test_1():
@@ -101,17 +84,22 @@ def test_big():
 
 
 def test_myclass():
-    D = MyClass()
+    D = ConfigDict(TESTDICT)
     assert D.a0[0].a1 == 2
     assert D.b0.c1[0].a2 == 11
     assert D.b0.c1[1].b2 == 13
     assert D.a0[-1]['?'] == 7
     assert D.b0['*&'].e2 == 104
-    assert D._c0 == (200, 300, 400)
+    assert D['0c'] == 200
+    assert D[-1.3] == 'yo'
     assert D.b0.c1[2][-13] == 'yo'
     assert D.b0.c1[3][-15].a3 == 'yo'
     assert D.b0[-10].e2 == 106
     assert D.b0._a1 == 108
+    D.b0.show_config()
+    D.b0.show_config = 'overriden'
+    D.b0.builtin_show_config()
+    # D.b0.builtin_show_config = 'overriden'  # expect error
 
 
 def test_builtin_inherit():
@@ -121,7 +109,7 @@ def test_builtin_inherit():
     assert D.a1 == 10
 
 # test_1()
-# test_2()
+test_2()
 test_big()
 test_myclass()
 test_builtin_inherit()

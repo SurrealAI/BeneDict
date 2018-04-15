@@ -8,23 +8,19 @@ Adapted from: https://github.com/makinacorpus/EasyDict
 """
 import json
 import yaml
+import inspect
 from io import StringIO
 from os.path import expanduser
 
 
-def _get_special_methods():
-    methods = ['keys', 'items', 'values', 'get', 'clear',
-               'update', 'pop', 'popitem',
-               'to_dict', 'deepcopy']
-    for action in ['load', 'dump']:
-        for mode in ['s', '']:  # 's' for string, '' for file
-            for format in ['json', 'yaml']:
-                methods.append(action + mode + '_' + format)
-    protected = ['builtin_' + m for m in methods]
-    return methods, protected
+def _builtin_name(method_name):
+    return 'builtin_' + method_name
 
+def _original_name(builtin_name):
+    return builtin_name[len('builtin_'):]
 
-_BeneDict_NATIVE_METHODS, _BeneDict_PROTECTED_METHODS = _get_special_methods()
+def _is_builtin(method_name):
+    return method_name.startswith('builtin_')
 
 
 class BeneDict(dict):
@@ -113,22 +109,25 @@ class BeneDict(dict):
     >>> o.items()
     [('clean', True)]
 
-    And like a class
+    Can be inherited, subclass will be recursively applied to dict objects.
 
-    >>> class Flower(BeneDict):
-    ...     power = 1
-    ...
-    >>> f = Flower()
-    >>> f.power
-    1
-    >>> f = Flower({'height': 12})
-    >>> f.height
-    12
-    >>> f['power']
-    1
-    >>> sorted(f.keys())
-    ['height', 'power']
+    Any new methods added in subclass will have a prefixed version "builtin_"
+    that protected overwriting.
     """
+    def __new__(cls, *args, **kwargs):
+        protected_methods = []
+        # add builtin_ protection
+        for attr_name in dir(cls):
+            attr = getattr(cls, attr_name)
+            if (not attr_name.startswith('_')
+                    and not _is_builtin(attr_name)
+                    and callable(attr)):
+                protected_name = _builtin_name(attr_name)
+                setattr(cls, protected_name, attr)
+                protected_methods.append(protected_name)
+        cls._PROTECTED_METHODS = protected_methods
+        return super().__new__(cls, *args, **kwargs)
+
     def __init__(self, d=None, **kwargs):
         super(BeneDict, self).__init__()
         if d is None:
@@ -137,22 +136,13 @@ class BeneDict(dict):
             dict.update(d, **kwargs)
         for k, v in dict.items(d):
             self.__setattr__(k, v)
-        # Class attributes
-        cls = self.__class__
-        for k in cls.__dict__.keys():
-            if not k.startswith('__'):
-                cls_attr = getattr(cls, k)
-                if k in _BeneDict_PROTECTED_METHODS and cls_attr == getattr(BeneDict, k):
-                    # user didn't override the protected methods (`builtin_foo`)
-                    continue
-                self.__setattr__(k, getattr(cls, k))
 
     def __setattr__(self, name, value):
-        # cls = self.__class__  # carry over inherited class from BeneDict
-        cls = BeneDict
-        if name in _BeneDict_PROTECTED_METHODS:
-            raise ValueError('Cannot override `{}`: BeneDict protected method'
-                             .format(name))
+        cls = self.__class__  # carry over inherited class from BeneDict
+        # cls = BeneDict
+        if name in cls._PROTECTED_METHODS:
+            raise ValueError('Cannot override `{}()`: {} protected method'
+                             .format(name, cls.__name__))
         if isinstance(value, (list, tuple)):
             value = type(value)(cls(x) if isinstance(x, dict) else x
                                 for x in value)
@@ -244,24 +234,27 @@ class BeneDict(dict):
 
     # we explicitly list them here so that IDEs like PyCharm can do auto-complete
     # call _print_protected_methods() to generate this code
-    builtin_keys = dict.keys
-    builtin_items = dict.items
-    builtin_values = dict.values
-    builtin_get = dict.get
     builtin_clear = dict.clear
-    builtin_update = dict.update
+    builtin_copy = dict.copy
+    builtin_fromkeys = dict.fromkeys
+    builtin_get = dict.get
+    builtin_items = dict.items
+    builtin_keys = dict.keys
     builtin_pop = dict.pop
     builtin_popitem = dict.popitem
-    builtin_to_dict = to_dict
+    builtin_setdefault = dict.setdefault
+    builtin_update = dict.update
+    builtin_values = dict.values
     builtin_deepcopy = deepcopy
-    builtin_loads_json = loads_json
-    builtin_loads_yaml = loads_yaml
-    builtin_load_json = load_json
-    builtin_load_yaml = load_yaml
-    builtin_dumps_json = dumps_json
-    builtin_dumps_yaml = dumps_yaml
     builtin_dump_json = dump_json
     builtin_dump_yaml = dump_yaml
+    builtin_dumps_json = dumps_json
+    builtin_dumps_yaml = dumps_yaml
+    builtin_load_json = load_json
+    builtin_load_yaml = load_yaml
+    builtin_loads_json = loads_json
+    builtin_loads_yaml = loads_yaml
+    builtin_to_dict = to_dict
 
 
 def benedict_to_dict(easy_dict):
@@ -283,18 +276,34 @@ def benedict_to_dict(easy_dict):
     return d
 
 
-def _add_protected_methods():
-    "unnecessary if the protected methods are explicitly listed in the class def"
-    for protected, normal in zip(_BeneDict_PROTECTED_METHODS,
-                                 _BeneDict_NATIVE_METHODS):
-        setattr(BeneDict, protected, getattr(BeneDict, normal))
+def get_benedict_protected_methods(d):
+    """
+    Can be applied to BeneDict itself or any class that inherits from BeneDict
+
+    Args:
+        d: a BeneDict or subclass object or class
+
+    Returns:
+        list of protected method names
+    """
+    if inspect.isclass(d):
+        try:
+            d = d()  # only applies to classes that can take no args
+        except:
+            raise ValueError('please pass in a concrete object of your class')
+    return [
+        attr_name for attr_name in dir(d)
+        if _is_builtin(attr_name) and callable(getattr(d, attr_name))
+    ]
 
 
 def _print_protected_methods():
     "paste the generated code into BeneDict class for PyCharm convenience"
-    for i, (protected, normal) in enumerate(zip(_BeneDict_PROTECTED_METHODS,
-                                                _BeneDict_NATIVE_METHODS)):
-        if i < 8:
-            normal = 'dict.' + normal
-        print('{} = {}'.format(protected, normal))
+    for method in [m for m in dir(dict) if not m.startswith('_')]:
+        print('{} = dict.{}'.format(_builtin_name(method), method))
+
+    for protected in get_benedict_protected_methods(BeneDict):
+        original_name = _original_name(protected)
+        if original_name not in dir(dict):
+            print('{} = {}'.format(protected, original_name))
 
