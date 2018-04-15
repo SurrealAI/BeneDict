@@ -1,4 +1,5 @@
-import pickle, traceback
+import pytest
+import pickle
 from benedict import (
     _print_protected_methods, BeneDict
 )
@@ -37,25 +38,14 @@ class ConfigDict(BeneDict):
         print('ConfigDict method', self.to_dict())
 
 
-class TestBuiltin(BeneDict):
-    keys = (20, 30)
-    items = 5
-    get = 8
-    a1 = 10
-    # builtin_update = 3
-
-
 def test_1():
-    a = BeneDict({'keys': BeneDict({'items': 100, 'get': 66, 'builtin_items': 'bad'})})
+    a = BeneDict({'keys': BeneDict({'items': 100, 'get': 66, 'update': 77})})
     b = a.deepcopy()
     b.keys.items = 120
-    print(a.keys.builtin_items())
-    print(b.keys)
-    print(b.keys.get)
-    # aib = pickle.dumps(b)
-    # aib = pickle.loads(aib)
-    # print(aib)
-    # print(aib.keys)
+    assert a.keys.items == 100
+    assert a.keys.update == 77
+    with pytest.raises(ValueError):
+        BeneDict({'keys': BeneDict({'builtin_items': 100, 'get': 66})})
 
 
 def test_2():
@@ -99,17 +89,7 @@ def test_myclass():
     D.b0.show_config()
     D.b0.show_config = 'overriden'
     D.b0.builtin_show_config()
-    # D.b0.builtin_show_config = 'overriden'  # expect error
+    with pytest.raises(ValueError):
+        D.b0.builtin_show_config = 'overriden'
 
 
-def test_builtin_inherit():
-    D = TestBuiltin()
-    assert D.keys == (20, 30)
-    assert D.items == 5
-    assert D.a1 == 10
-
-# test_1()
-test_2()
-test_big()
-test_myclass()
-test_builtin_inherit()
