@@ -140,65 +140,11 @@ def _fill_default_config(config, default_config, dict_trace):
 
 
 class Config(BeneDict):
-    # def __init__(self, d=None, **kwargs):
-    #     if d is None:
-    #         d = {}
-    #     if kwargs:
-    #         d.update(**kwargs)
-    #     for k, v in d.items():
-    #         setattr(self, k, v)
-    #
-    # def __setattr__(self, name, value):
-    #     if name in _RESERVED_METHODS:
-    #         raise ConfigError('"{}()" is a reserved method, cannot override'
-    #                           .format(name))
-    #     if isinstance(value, (list, tuple)):
-    #         value = [self.__class__(x)
-    #                  if isinstance(x, dict) else x for x in value]
-    #     elif isinstance(value, dict) and not isinstance(value, self.__class__):
-    #         value = self.__class__(value)
-    #     super().__setattr__(name, value)
-    #     super().__setitem__(name, value)
-    #
-    # __setitem__ = __setattr__
-    #
-    # def update(self, other):
-    #     for k, v in other.items():
-    #         setattr(self, k, v)
-
     def __getattr__(self, key):
         try:
             return super().__getattribute__(key)
         except AttributeError:
             raise ConfigError('config key "{}" missing.'.format(key))
-
-    # def to_dict(self):
-    #     """
-    #     Recursively convert back to dictionary
-    #     """
-    #     d = {}
-    #     for k, value in self.items():
-    #         if isinstance(value, Config):
-    #             d[k] = value.to_dict()
-    #         elif isinstance(value, (list, tuple)):
-    #             d[k] = type(value)(
-    #                 v.to_dict() if isinstance(v, Config) else v for v in value)
-    #         else:
-    #             d[k] = value
-    #     return d
-
-    # def dump_file(self, file_path):
-    #     assert file_path.endswith('.json') or file_path.endswith('yaml')
-    #     with open(file_path, 'w') as fp:
-    #         if file_path.endswith('.json'):
-    #             json.dump(self, fp, indent=4)
-    #         else:
-    #             yaml.dump(
-    #                 self.to_dict(),
-    #                 stream=fp,
-    #                 indent=4,
-    #                 default_flow_style=False
-    #             )
 
     def extend(self, default_config):
         assert isinstance(default_config, dict)
