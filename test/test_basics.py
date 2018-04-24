@@ -1,6 +1,6 @@
 import pytest
 import pickle
-from benedict import (
+from benedict.core import (
     _print_protected_methods, BeneDict
 )
 
@@ -93,3 +93,8 @@ def test_myclass():
         D.b0.builtin_show_config = 'overriden'
 
 
+def test_deepcopy():
+    D = ConfigDict(TESTDICT)
+    D_copy = D.deepcopy()
+    D_copy.b0._a1 = 'changed'
+    assert D.b0._a1 == 108
