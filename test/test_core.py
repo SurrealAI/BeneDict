@@ -33,9 +33,9 @@ TESTDICT = {
 }
 
 
-class ConfigDict(BeneDict):
+class MyDict(BeneDict):
     def show_config(self):
-        print('ConfigDict method', self.to_dict())
+        print('MyDict method', self.to_dict())
 
 
 def test_1():
@@ -74,7 +74,7 @@ def test_big():
 
 
 def test_myclass():
-    D = ConfigDict(TESTDICT)
+    D = MyDict(TESTDICT)
     assert D.a0[0].a1 == 2
     assert D.b0.c1[0].a2 == 11
     assert D.b0.c1[1].b2 == 13
@@ -94,7 +94,42 @@ def test_myclass():
 
 
 def test_deepcopy():
-    D = ConfigDict(TESTDICT)
+    D = MyDict(TESTDICT)
     D_copy = D.deepcopy()
     D_copy.b0._a1 = 'changed'
     assert D.b0._a1 == 108
+
+
+def test_json():
+    """
+    Warning: JSON keys must be strings
+    """
+    JSON_TESTDICT = {
+        'a0': [
+            {'a1': 2},
+            {'b1': 3},
+            {'c1': 6},
+        ],
+        'b0': {
+            'c1': [
+                {'a2': 11},
+                {'b2': 13},
+            ],
+            'd1': {'e2': 100},
+            '*&': {'e2': 104},
+            '_a1': 108
+        },
+        '0c': 200,
+    }
+    D = MyDict(JSON_TESTDICT)
+    file_path = '~/Temp/test.json'
+    D.dump_file(file_path)
+    D_loaded = MyDict.load_file(file_path)
+    assert D == D_loaded
+
+def test_yaml():
+    D = MyDict(TESTDICT)
+    file_path = '~/Temp/test.yml'
+    D.dump_file(file_path)
+    D_loaded = MyDict.load_file(file_path)
+    assert D == D_loaded

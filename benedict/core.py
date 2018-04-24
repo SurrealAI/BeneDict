@@ -166,20 +166,20 @@ class BeneDict(dict):
         return self.__class__(self)
 
     @classmethod
-    def load_json_file(cls, file_path, **json_kwargs):
-        return cls(load_json_file(file_path, **json_kwargs))
+    def load_json_file(cls, file_path, **loader_kwargs):
+        return cls(load_json_file(file_path, **loader_kwargs))
 
     @classmethod
-    def load_json_str(cls, string, **json_kwargs):
-        return cls(load_json_str(string, **json_kwargs))
+    def load_json_str(cls, string, **loader_kwargs):
+        return cls(load_json_str(string, **loader_kwargs))
 
     @classmethod
-    def load_yaml_file(cls, file_path, **yaml_kwargs):
-        return cls(load_yaml_file(file_path, **yaml_kwargs))
+    def load_yaml_file(cls, file_path, **loader_kwargs):
+        return cls(load_yaml_file(file_path, **loader_kwargs))
 
     @classmethod
-    def load_yaml_str(cls, string, **yaml_kwargs):
-        return cls(load_yaml_str(string, **yaml_kwargs))
+    def load_yaml_str(cls, string, **loader_kwargs):
+        return cls(load_yaml_str(string, **loader_kwargs))
 
     @classmethod
     def load_file(cls, file_path, **loader_kwargs):
@@ -190,28 +190,23 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        if file_path.endswith('.json'):
-            return cls.builtin_load_json_file(file_path, **loader_kwargs)
-        elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
-            return cls.builtin_load_yaml_file(file_path, **loader_kwargs)
-        else:
-            raise IOError('unknown file extension, supports only ".json", ".yml", ".yaml"')
-        
-    def dump_json_file(self, file_path, **json_kwargs):
-        dump_json_file(benedict_to_dict(self), file_path, **json_kwargs)
+        return cls(load_file(file_path, **loader_kwargs))
 
-    def dump_json_str(self, **json_kwargs):
+    def dump_json_file(self, file_path, **dumper_kwargs):
+        dump_json_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+
+    def dump_json_str(self, **dumper_kwargs):
         "Returns: string"
-        return dump_json_str(benedict_to_dict(self), **json_kwargs)
+        return dump_json_str(benedict_to_dict(self), **dumper_kwargs)
 
-    def dump_yaml_file(self, file_path, **yaml_kwargs):
-        dump_yaml_file(benedict_to_dict(self), file_path, **yaml_kwargs)
+    def dump_yaml_file(self, file_path, **dumper_kwargs):
+        dump_yaml_file(benedict_to_dict(self), file_path, **dumper_kwargs)
 
-    def dump_yaml_str(self, **yaml_kwargs):
+    def dump_yaml_str(self, **dumper_kwargs):
         "Returns: string"
-        return dump_yaml_str(benedict_to_dict(self), **yaml_kwargs)
+        return dump_yaml_str(benedict_to_dict(self), **dumper_kwargs)
 
-    def dump_file(cls, file_path, **dumper_kwargs):
+    def dump_file(self, file_path, **dumper_kwargs):
         """
         Args:
             file_path: JSON or YAML loader depends on the file extension
@@ -219,12 +214,7 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        if file_path.endswith('.json'):
-            return cls.builtin_dump_json_file(file_path, **dumper_kwargs)
-        elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
-            return cls.builtin_dump_yaml_file(file_path, **dumper_kwargs)
-        else:
-            raise IOError('unknown file extension, supports only ".json", ".yml", ".yaml"')
+        dump_file(benedict_to_dict(self), file_path, **dumper_kwargs)
 
     def __getstate__(self):
         """

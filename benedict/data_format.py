@@ -109,3 +109,80 @@ ordered_load_yaml_str = partial(load_yaml_str, loader=_ordered_load_stream_yaml)
 ordered_dump_yaml_file = partial(dump_yaml_file, dumper=_ordered_dump_stream_yaml)
 ordered_dump_yaml_str = partial(dump_yaml_str, dumper=_ordered_dump_stream_yaml)
 
+
+# ==================== auto-recognize extension ====================
+def _load_with_extension(file_path, json_method, yaml_method, kwargs):
+    if file_path.endswith('.json'):
+        return json_method(file_path, **kwargs)
+    elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
+        return yaml_method(file_path, **kwargs)
+    else:
+        raise IOError(
+            'unknown file extension: "{}", loader supports only ".json", ".yml", ".yaml"'
+            .format(file_path)
+        )
+
+
+def load_file(file_path, **loader_kwargs):
+    """
+    Args:
+        file_path: JSON or YAML loader depends on the file extension
+
+    Raises:
+        IOError: if extension is not ".json", ".yml", or ".yaml"
+    """
+    return _load_with_extension(
+        file_path, load_json_file, load_yaml_file, loader_kwargs
+    )
+
+
+def ordered_load_file(file_path, **loader_kwargs):
+    """
+    Args:
+        file_path: JSON or YAML loader depends on the file extension
+
+    Raises:
+        IOError: if extension is not ".json", ".yml", or ".yaml"
+    """
+    return _load_with_extension(
+        file_path, ordered_load_json_file, ordered_load_yaml_file, loader_kwargs
+    )
+
+
+def _dump_with_extension(data, file_path, json_method, yaml_method, kwargs):
+    if file_path.endswith('.json'):
+        return json_method(data, file_path, **kwargs)
+    elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
+        return yaml_method(data, file_path, **kwargs)
+    else:
+        raise IOError(
+            'unknown file extension: "{}", dumper supports only ".json", ".yml", ".yaml"'
+            .format(file_path)
+        )
+
+
+def dump_file(data, file_path, **dumper_kwargs):
+    """
+    Args:
+        file_path: JSON or YAML loader depends on the file extension
+
+    Raises:
+        IOError: if extension is not ".json", ".yml", or ".yaml"
+    """
+    return _dump_with_extension(
+        data, file_path, dump_json_file, dump_yaml_file, dumper_kwargs
+    )
+
+
+def ordered_dump_file(data, file_path, **dumper_kwargs):
+    """
+    Args:
+        file_path: JSON or YAML loader depends on the file extension
+
+    Raises:
+        IOError: if extension is not ".json", ".yml", or ".yaml"
+    """
+    return _dump_with_extension(
+        data, file_path, ordered_dump_json_file, ordered_dump_yaml_file, dumper_kwargs
+    )
+
