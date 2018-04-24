@@ -9,45 +9,45 @@ from collections import OrderedDict
 from functools import partial
 
 
-def load_json(file_path, **kwargs):
+def load_json_file(file_path, **kwargs):
     file_path = path.expanduser(file_path)
     with open(file_path, 'r') as fp:
         return json.load(fp, **kwargs)
 
 
-def loads_json(string, **kwargs):
+def load_json_str(string, **kwargs):
     return json.loads(string, **kwargs)
 
 
-def dump_json(data, file_path, **kwargs):
+def dump_json_file(data, file_path, **kwargs):
     file_path = path.expanduser(file_path)
     with open(file_path, 'w') as fp:
         indent = kwargs.get('indent', 4)
         json.dump(data, fp, indent=indent, **kwargs)
 
 
-def dumps_json(data, **kwargs):
+def dump_json_str(data, **kwargs):
     "Returns: string"
     return json.dumps(data, **kwargs)
 
 
-ordered_load_json = partial(load_json, object_pairs_hook=OrderedDict)
-ordered_loads_json = partial(loads_json, object_pairs_hook=OrderedDict)
-ordered_dump_json = dump_json
-ordered_dumps_json = dumps_json
+ordered_load_json_file = partial(load_json_file, object_pairs_hook=OrderedDict)
+ordered_load_json_str = partial(load_json_str, object_pairs_hook=OrderedDict)
+ordered_dump_json_file = dump_json_file
+ordered_dump_json_str = dump_json_str
 
 
-def load_yaml(file_path, *, loader=yaml.load, **kwargs):
+def load_yaml_file(file_path, *, loader=yaml.load, **kwargs):
     file_path = path.expanduser(file_path)
     with open(file_path, 'r') as fp:
         return loader(fp, **kwargs)
 
 
-def loads_yaml(string, *, loader=yaml.load, **kwargs):
+def load_yaml_str(string, *, loader=yaml.load, **kwargs):
     return loader(string, **kwargs)
 
 
-def dump_yaml(data, file_path, *, dumper=yaml.dump, **kwargs):
+def dump_yaml_file(data, file_path, *, dumper=yaml.dump, **kwargs):
     file_path = path.expanduser(file_path)
     indent = kwargs.get('indent', 2)
     default_flow_style = kwargs.get('default_flow_style', False)
@@ -61,7 +61,7 @@ def dump_yaml(data, file_path, *, dumper=yaml.dump, **kwargs):
         )
 
 
-def dumps_yaml(data, *, dumper=yaml.dump, **kwargs):
+def dump_yaml_str(data, *, dumper=yaml.dump, **kwargs):
     "Returns: string"
     stream = StringIO()
     indent = kwargs.get('indent', 2)
@@ -104,7 +104,8 @@ def _ordered_dump_stream_yaml(data, stream=None, Dumper=yaml.Dumper, **kwargs):
     return yaml.dump(data, stream, OrderedDumper, **kwargs)
 
 
-ordered_load_yaml = partial(load_yaml, loader=_ordered_load_stream_yaml)
-ordered_loads_yaml = partial(loads_yaml, loader=_ordered_load_stream_yaml)
-ordered_dump_yaml = partial(dump_yaml, dumper=_ordered_dump_stream_yaml)
-ordered_dumps_yaml = partial(dumps_yaml, dumper=_ordered_dump_stream_yaml)
+ordered_load_yaml_file = partial(load_yaml_file, loader=_ordered_load_stream_yaml)
+ordered_load_yaml_str = partial(load_yaml_str, loader=_ordered_load_stream_yaml)
+ordered_dump_yaml_file = partial(dump_yaml_file, dumper=_ordered_dump_stream_yaml)
+ordered_dump_yaml_str = partial(dump_yaml_str, dumper=_ordered_dump_stream_yaml)
+

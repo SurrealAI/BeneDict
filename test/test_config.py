@@ -159,13 +159,13 @@ def recursive_print(D):
 
 
 def test_json(C):
-    Config(C).dump_json('~/Temp/debug_config.json')
-    assert Config.load_json('~/Temp/debug_config.json') == C
+    Config(C).dump_file('~/Temp/debug_config.json')
+    assert Config.load_file('~/Temp/debug_config.json') == C
 
 
 def test_yaml(C):
-    Config(C).dump_yaml('~/Temp/debug_config.yaml')
-    assert Config.load_yaml('~/Temp/debug_config.yaml') == C
+    Config(C).dump_file('~/Temp/debug_config.yml')
+    assert Config.load_file('~/Temp/debug_config.yaml') == C
 
 
 def test_num_error(C_num):

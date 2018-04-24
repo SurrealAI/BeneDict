@@ -7,20 +7,21 @@ D = OrderedDict(
 
 
 def test_yaml():
-    print(ordered_dumps_yaml(D))
-    print(loads_yaml(ordered_dumps_yaml(D)))
-    assert ordered_loads_yaml(ordered_dumps_yaml(D)) == D
+    print(ordered_dump_yaml_str(D))
+    print(load_yaml_str(ordered_dump_yaml_str(D)))
+    assert ordered_load_yaml_str(ordered_dump_yaml_str(D)) == D
     fpath = '~/Temp/ordered.yml'
-    ordered_dump_yaml(D, fpath)
-    print(load_yaml(fpath))
-    assert ordered_load_yaml(fpath) == D
+    ordered_dump_yaml_file(D, fpath)
+    print(load_yaml_file(fpath))
+    assert ordered_load_yaml_file(fpath) == D
 
 
 def test_json():
-    print(ordered_dumps_yaml(D))
-    print(loads_yaml(ordered_dumps_yaml(D)))
-    assert ordered_loads_yaml(ordered_dumps_yaml(D)) == D
+    print(ordered_dump_json_str(D))
+    print(load_json_str(ordered_dump_json_str(D)))
+    assert ordered_load_json_str(ordered_dump_json_str(D)) == D
     fpath = '~/Temp/ordered.json'
-    ordered_dump_yaml(D, fpath)
-    print(load_yaml(fpath))
-    assert ordered_load_yaml(fpath) == D
+    ordered_dump_json_file(D, fpath)
+    print(load_json_file(fpath))
+    assert ordered_load_json_file(fpath) == D
+

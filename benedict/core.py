@@ -166,34 +166,65 @@ class BeneDict(dict):
         return self.__class__(self)
 
     @classmethod
-    def load_json(cls, file_path, **json_kwargs):
-        return cls(load_json(file_path, **json_kwargs))
+    def load_json_file(cls, file_path, **json_kwargs):
+        return cls(load_json_file(file_path, **json_kwargs))
 
     @classmethod
-    def loads_json(cls, string, **json_kwargs):
-        return cls(loads_json(string, **json_kwargs))
+    def load_json_str(cls, string, **json_kwargs):
+        return cls(load_json_str(string, **json_kwargs))
 
     @classmethod
-    def load_yaml(cls, file_path, **yaml_kwargs):
-        return cls(load_yaml(file_path, **yaml_kwargs))
+    def load_yaml_file(cls, file_path, **yaml_kwargs):
+        return cls(load_yaml_file(file_path, **yaml_kwargs))
 
     @classmethod
-    def loads_yaml(cls, string, **yaml_kwargs):
-        return cls(loads_yaml(string, **yaml_kwargs))
+    def load_yaml_str(cls, string, **yaml_kwargs):
+        return cls(load_yaml_str(string, **yaml_kwargs))
 
-    def dump_json(self, file_path, **json_kwargs):
-        dump_json(benedict_to_dict(self), file_path, **json_kwargs)
+    @classmethod
+    def load_file(cls, file_path, **loader_kwargs):
+        """
+        Args:
+            file_path: JSON or YAML loader depends on the file extension
 
-    def dumps_json(self, **json_kwargs):
+        Raises:
+            IOError: if extension is not ".json", ".yml", or ".yaml"
+        """
+        if file_path.endswith('.json'):
+            return cls.builtin_load_json_file(file_path, **loader_kwargs)
+        elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
+            return cls.builtin_load_yaml_file(file_path, **loader_kwargs)
+        else:
+            raise IOError('unknown file extension, supports only ".json", ".yml", ".yaml"')
+        
+    def dump_json_file(self, file_path, **json_kwargs):
+        dump_json_file(benedict_to_dict(self), file_path, **json_kwargs)
+
+    def dump_json_str(self, **json_kwargs):
         "Returns: string"
-        return dumps_json(benedict_to_dict(self), **json_kwargs)
+        return dump_json_str(benedict_to_dict(self), **json_kwargs)
 
-    def dump_yaml(self, file_path, **yaml_kwargs):
-        dump_yaml(benedict_to_dict(self), file_path, **yaml_kwargs)
+    def dump_yaml_file(self, file_path, **yaml_kwargs):
+        dump_yaml_file(benedict_to_dict(self), file_path, **yaml_kwargs)
 
-    def dumps_yaml(self, **yaml_kwargs):
+    def dump_yaml_str(self, **yaml_kwargs):
         "Returns: string"
-        return dumps_yaml(benedict_to_dict(self), **yaml_kwargs)
+        return dump_yaml_str(benedict_to_dict(self), **yaml_kwargs)
+
+    def dump_file(cls, file_path, **dumper_kwargs):
+        """
+        Args:
+            file_path: JSON or YAML loader depends on the file extension
+
+        Raises:
+            IOError: if extension is not ".json", ".yml", or ".yaml"
+        """
+        if file_path.endswith('.json'):
+            return cls.builtin_dump_json_file(file_path, **dumper_kwargs)
+        elif file_path.endswith('.yml') or file_path.endswith('.yaml'):
+            return cls.builtin_dump_yaml_file(file_path, **dumper_kwargs)
+        else:
+            raise IOError('unknown file extension, supports only ".json", ".yml", ".yaml"')
 
     def __getstate__(self):
         """
@@ -225,14 +256,16 @@ class BeneDict(dict):
     builtin_update = dict.update
     builtin_values = dict.values
     builtin_deepcopy = deepcopy
-    builtin_dump_json = dump_json
-    builtin_dump_yaml = dump_yaml
-    builtin_dumps_json = dumps_json
-    builtin_dumps_yaml = dumps_yaml
-    builtin_load_json = load_json
-    builtin_load_yaml = load_yaml
-    builtin_loads_json = loads_json
-    builtin_loads_yaml = loads_yaml
+    builtin_dump_json_file = dump_json_file
+    builtin_dump_json_str = dump_json_str
+    builtin_dump_yaml_file = dump_yaml_file
+    builtin_dump_yaml_str = dump_yaml_str
+    builtin_dump_file = dump_file
+    builtin_load_json_file = load_json_file
+    builtin_load_json_str = load_json_str
+    builtin_load_yaml_file = load_yaml_file
+    builtin_load_yaml_str = load_yaml_str
+    builtin_load_file = load_file
     builtin_to_dict = to_dict
 
 
