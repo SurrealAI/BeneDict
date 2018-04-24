@@ -7,7 +7,7 @@ but their original version will always be protected with prefix builtin_
 Adapted from: https://github.com/makinacorpus/EasyDict
 """
 import inspect
-from benedict.data_format import *
+import benedict.data_format as df
 
 
 def _builtin_name(method_name):
@@ -167,19 +167,19 @@ class BeneDict(dict):
 
     @classmethod
     def load_json_file(cls, file_path, **loader_kwargs):
-        return cls(load_json_file(file_path, **loader_kwargs))
+        return cls(df.load_json_file(file_path, **loader_kwargs))
 
     @classmethod
     def load_json_str(cls, string, **loader_kwargs):
-        return cls(load_json_str(string, **loader_kwargs))
+        return cls(df.load_json_str(string, **loader_kwargs))
 
     @classmethod
     def load_yaml_file(cls, file_path, **loader_kwargs):
-        return cls(load_yaml_file(file_path, **loader_kwargs))
+        return cls(df.load_yaml_file(file_path, **loader_kwargs))
 
     @classmethod
     def load_yaml_str(cls, string, **loader_kwargs):
-        return cls(load_yaml_str(string, **loader_kwargs))
+        return cls(df.load_yaml_str(string, **loader_kwargs))
 
     @classmethod
     def load_file(cls, file_path, **loader_kwargs):
@@ -190,21 +190,21 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        return cls(load_file(file_path, **loader_kwargs))
+        return cls(df.load_file(file_path, **loader_kwargs))
 
     def dump_json_file(self, file_path, **dumper_kwargs):
-        dump_json_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.dump_json_file(benedict_to_dict(self), file_path, **dumper_kwargs)
 
     def dump_json_str(self, **dumper_kwargs):
         "Returns: string"
-        return dump_json_str(benedict_to_dict(self), **dumper_kwargs)
+        return df.dump_json_str(benedict_to_dict(self), **dumper_kwargs)
 
     def dump_yaml_file(self, file_path, **dumper_kwargs):
-        dump_yaml_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.dump_yaml_file(benedict_to_dict(self), file_path, **dumper_kwargs)
 
     def dump_yaml_str(self, **dumper_kwargs):
         "Returns: string"
-        return dump_yaml_str(benedict_to_dict(self), **dumper_kwargs)
+        return df.dump_yaml_str(benedict_to_dict(self), **dumper_kwargs)
 
     def dump_file(self, file_path, **dumper_kwargs):
         """
@@ -214,7 +214,7 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        dump_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.dump_file(benedict_to_dict(self), file_path, **dumper_kwargs)
 
     def __getstate__(self):
         """
