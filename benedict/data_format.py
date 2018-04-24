@@ -108,25 +108,3 @@ ordered_load_yaml = partial(load_yaml, loader=_ordered_load_stream_yaml)
 ordered_loads_yaml = partial(loads_yaml, loader=_ordered_load_stream_yaml)
 ordered_dump_yaml = partial(dump_yaml, dumper=_ordered_dump_stream_yaml)
 ordered_dumps_yaml = partial(dumps_yaml, dumper=_ordered_dump_stream_yaml)
-
-
-if __name__ == '__main__':
-    D = OrderedDict(
-        [('z','y'), ('x','w'), ('a', 'b'), ('c', 'd')]
-    )
-    print(ordered_dumps_yaml(D))
-    print(loads_yaml(ordered_dumps_yaml(D)))
-    print(ordered_loads_yaml(ordered_dumps_yaml(D)))
-    fpath = '~/Temp/kurreal/ordered.yml'
-    ordered_dump_yaml(D, fpath)
-    print(load_yaml(fpath))
-    print(ordered_load_yaml(fpath))
-
-    print('===== json =====')
-    print(ordered_dumps_yaml(D))
-    print(loads_yaml(ordered_dumps_yaml(D)))
-    print(ordered_loads_yaml(ordered_dumps_yaml(D)))
-    fpath = '~/Temp/kurreal/ordered.json'
-    ordered_dump_yaml(D, fpath)
-    print(load_yaml(fpath))
-    print(ordered_load_yaml(fpath))
