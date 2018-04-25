@@ -1,14 +1,17 @@
 """
-BeneDict enables accessing dict values by attribute, just like Javascript's
+OrderedBeneDict enables accessing dict values by attribute, just like Javascript's
 dot notation. Supports JSON/YAML operations.
 Builtin methods like "values()" and "items()" can be overriden by the data keys,
 but their original version will always be protected with prefix builtin_
 
 Adapted from: https://github.com/makinacorpus/EasyDict
 """
-import inspect
-import collections.abc as abc
 import benedict.data_format as df
+from benedict.core import (
+    BeneDict, benedict_to_dict, get_benedict_protected_methods
+)
+from collections import OrderedDict
+import collections.abc as abc
 
 
 def _builtin_name(method_name):
@@ -23,19 +26,10 @@ def _is_builtin(method_name):
     return method_name.startswith('builtin_')
 
 
-def _benedict_init(classes, self, *args, **kwargs):
+class OrderedBeneDict(OrderedDict):
     """
-    BeneDict and OrderedBeneDict init method
-
-    classes: check instance of BeneDict or OrderedBeneDict
-    """
-    pass
-
-
-class BeneDict(dict):
-    """
-    BeneDict enables accessing dict values by attribute, just like Javascript's
-    dot notation. Supports JSON/YAML operations.
+    OrderedBeneDict enables accessing dict values by attribute,
+    just like Javascript's dot notation. Supports JSON/YAML operations.
 
     Adapted from: https://github.com/makinacorpus/EasyDict
 
@@ -46,82 +40,6 @@ class BeneDict(dict):
     Added methods: the version always prefixed by `builtin` is protected against
       changes. You can use the non-prefixed version if you know for sure that
       the name will never be overriden
-
-    >>> d = BeneDict({'foo':3})
-    >>> d['foo']
-    3
-    >>> d.foo
-    3
-    >>> d.bar
-    Traceback (most recent call last):
-    ...
-    AttributeError: 'BeneDict' object has no attribute 'bar'
-
-    Works recursively
-
-    >>> d = BeneDict({'foo':3, 'bar':{'x':1, 'y':2}})
-    >>> isinstance(d.bar, dict)
-    True
-    >>> d.bar.x
-    1
-
-    Bullet-proof
-
-    >>> BeneDict({})
-    {}
-    >>> BeneDict(d={})
-    {}
-    >>> BeneDict(None)
-    {}
-    >>> d = {'a': 1}
-    >>> BeneDict(**d)
-    {'a': 1}
-
-    Set attributes
-
-    >>> d = BeneDict()
-    >>> d.foo = 3
-    >>> d.foo
-    3
-    >>> d.bar = {'prop': 'value'}
-    >>> d.bar.prop
-    'value'
-    >>> d
-    {'foo': 3, 'bar': {'prop': 'value'}}
-    >>> d.bar.prop = 'newer'
-    >>> d.bar.prop
-    'newer'
-
-
-    Values extraction
-
-    >>> d = BeneDict({'foo':0, 'bar':[{'x':1, 'y':2}, {'x':3, 'y':4}]})
-    >>> isinstance(d.bar, list)
-    True
-    >>> from operator import attrgetter
-    >>> map(attrgetter('x'), d.bar)
-    [1, 3]
-    >>> map(attrgetter('y'), d.bar)
-    [2, 4]
-    >>> d = BeneDict()
-    >>> d.keys()
-    []
-    >>> d = BeneDict(foo=3, bar=dict(x=1, y=2))
-    >>> d.foo
-    3
-    >>> d.bar.x
-    1
-
-    Still like a dict though
-
-    >>> o = BeneDict({'clean':True})
-    >>> o.items()
-    [('clean', True)]
-
-    Can be inherited, subclass will be recursively applied to dict objects.
-
-    Any new methods added in subclass will have a prefixed version "builtin_"
-    that protected overwriting.
     """
     def __new__(cls, *args, **kwargs):
         protected_methods = []
@@ -142,9 +60,7 @@ class BeneDict(dict):
         d_items = {}
         if len(args) == 1:
             d_items = args[0]
-            # prevent cyclic import
-            from benedict.ordered import OrderedBeneDict
-            if isinstance(d_items, (BeneDict, OrderedBeneDict)):
+            if isinstance(d_items, (OrderedBeneDict, BeneDict)):
                 d_items = d_items.builtin_items()
             elif isinstance(d_items, abc.Mapping):
                 d_items = d_items.items()
@@ -161,7 +77,6 @@ class BeneDict(dict):
 
     def __setattr__(self, name, value):
         cls = self.__class__  # carry over inherited class from BeneDict
-        # cls = BeneDict
         if name in cls._PROTECTED_METHODS:
             raise ValueError('Cannot override `{}()`: {} protected method'
                              .format(name, cls.__name__))
@@ -183,26 +98,26 @@ class BeneDict(dict):
         """
         Convert to raw dict
         """
-        return benedict_to_dict(self)
+        return benedict_to_ordereddict(self)
 
     def deepcopy(self):
         return self.__class__(self)
 
     @classmethod
     def load_json_file(cls, file_path, **loader_kwargs):
-        return cls(df.load_json_file(file_path, **loader_kwargs))
+        return cls(df.ordered_load_json_file(file_path, **loader_kwargs))
 
     @classmethod
     def load_json_str(cls, string, **loader_kwargs):
-        return cls(df.load_json_str(string, **loader_kwargs))
+        return cls(df.ordered_load_json_str(string, **loader_kwargs))
 
     @classmethod
     def load_yaml_file(cls, file_path, **loader_kwargs):
-        return cls(df.load_yaml_file(file_path, **loader_kwargs))
+        return cls(df.ordered_load_yaml_file(file_path, **loader_kwargs))
 
     @classmethod
     def load_yaml_str(cls, string, **loader_kwargs):
-        return cls(df.load_yaml_str(string, **loader_kwargs))
+        return cls(df.ordered_load_yaml_str(string, **loader_kwargs))
 
     @classmethod
     def load_file(cls, file_path, **loader_kwargs):
@@ -213,21 +128,25 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        return cls(df.load_file(file_path, **loader_kwargs))
+        return cls(df.ordered_load_file(file_path, **loader_kwargs))
 
     def dump_json_file(self, file_path, **dumper_kwargs):
-        df.dump_json_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.ordered_dump_json_file(
+            benedict_to_ordereddict(self), file_path, **dumper_kwargs)
 
     def dump_json_str(self, **dumper_kwargs):
         "Returns: string"
-        return df.dump_json_str(benedict_to_dict(self), **dumper_kwargs)
+        return df.ordered_dump_json_str(
+            benedict_to_ordereddict(self), **dumper_kwargs)
 
     def dump_yaml_file(self, file_path, **dumper_kwargs):
-        df.dump_yaml_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.ordered_dump_yaml_file(
+            benedict_to_ordereddict(self), file_path, **dumper_kwargs)
 
     def dump_yaml_str(self, **dumper_kwargs):
         "Returns: string"
-        return df.dump_yaml_str(benedict_to_dict(self), **dumper_kwargs)
+        return df.ordered_dump_yaml_str(
+            benedict_to_ordereddict(self), **dumper_kwargs)
 
     def dump_file(self, file_path, **dumper_kwargs):
         """
@@ -237,7 +156,8 @@ class BeneDict(dict):
         Raises:
             IOError: if extension is not ".json", ".yml", or ".yaml"
         """
-        df.dump_file(benedict_to_dict(self), file_path, **dumper_kwargs)
+        df.ordered_dump_file(
+            benedict_to_ordereddict(self), file_path, **dumper_kwargs)
 
     def __getstate__(self):
         """
@@ -247,89 +167,54 @@ class BeneDict(dict):
           pickle will report error.
           don't know how to resolve yet
         """
-        return benedict_to_dict(self)
+        return benedict_to_ordereddict(self)
 
     def __setstate__(self, state):
         self.__init__(state)
 
     def __str__(self):
-        return str(benedict_to_dict(self))
+        return str(benedict_to_ordereddict(self))
 
     # we explicitly list them here so that IDEs like PyCharm can do auto-complete
     # call _print_protected_methods() to generate this code
-    builtin_clear = dict.clear
-    builtin_copy = dict.copy
-    builtin_fromkeys = dict.fromkeys
-    builtin_get = dict.get
-    builtin_items = dict.items
-    builtin_keys = dict.keys
-    builtin_pop = dict.pop
-    builtin_popitem = dict.popitem
-    builtin_setdefault = dict.setdefault
-    builtin_update = dict.update
-    builtin_values = dict.values
+    builtin_clear = OrderedDict.clear
+    builtin_copy = OrderedDict.copy
+    builtin_fromkeys = OrderedDict.fromkeys
+    builtin_get = OrderedDict.get
+    builtin_items = OrderedDict.items
+    builtin_keys = OrderedDict.keys
+    builtin_move_to_end = OrderedDict.move_to_end
+    builtin_pop = OrderedDict.pop
+    builtin_popitem = OrderedDict.popitem
+    builtin_setdefault = OrderedDict.setdefault
+    builtin_update = OrderedDict.update
+    builtin_values = OrderedDict.values
     builtin_deepcopy = deepcopy
+    builtin_dump_file = dump_file
     builtin_dump_json_file = dump_json_file
     builtin_dump_json_str = dump_json_str
     builtin_dump_yaml_file = dump_yaml_file
     builtin_dump_yaml_str = dump_yaml_str
-    builtin_dump_file = dump_file
+    builtin_load_file = load_file
     builtin_load_json_file = load_json_file
     builtin_load_json_str = load_json_str
     builtin_load_yaml_file = load_yaml_file
     builtin_load_yaml_str = load_yaml_str
-    builtin_load_file = load_file
     builtin_to_dict = to_dict
 
 
-def benedict_to_dict(D, to_type=dict):
-    """
-    Recursively convert back to builtin dict type
-    """
-    d = to_type()
-    for k, value in to_type.items(D):
-        if isinstance(value, abc.Mapping):
-            d[k] = benedict_to_dict(value, to_type=to_type)
-        elif isinstance(value, (list, tuple)):
-            d[k] = type(value)(
-                benedict_to_dict(v, to_type=to_type)
-                if isinstance(v, BeneDict)
-                else v for v in value
-            )
-        else:
-            d[k] = value
-    return d
-
-
-def get_benedict_protected_methods(d):
-    """
-    Can be applied to BeneDict itself or any class that inherits from BeneDict
-
-    Args:
-        d: a BeneDict or subclass object or class
-
-    Returns:
-        list of protected method names
-    """
-    if inspect.isclass(d):
-        try:
-            d = d()  # only applies to classes that can take no args
-        except:
-            raise ValueError('please pass in a concrete object of your class')
-    return [
-        attr_name for attr_name in dir(d)
-        if _is_builtin(attr_name) and callable(getattr(d, attr_name))
-    ]
+def benedict_to_ordereddict(D):
+    return benedict_to_dict(D, to_type=OrderedDict)
 
 
 def _print_protected_methods():
     "paste the generated code into BeneDict class for PyCharm convenience"
-    for method in [m for m in dir(dict) if not m.startswith('_')]:
-        print('{} = dict.{}'.format(_builtin_name(method), method))
+    for method in [m for m in dir(OrderedDict) if not m.startswith('_')]:
+        print('{} = OrderedDict.{}'.format(_builtin_name(method), method))
 
-    for protected in get_benedict_protected_methods(BeneDict):
+    for protected in get_benedict_protected_methods(OrderedBeneDict):
         original_name = _original_name(protected)
-        if original_name not in dir(dict):
+        if original_name not in dir(OrderedDict):
             print('{} = {}'.format(protected, original_name))
 
 

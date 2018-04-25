@@ -1,11 +1,7 @@
 import pytest
 import pickle
-from benedict.core import (
-    _print_protected_methods, BeneDict
-)
-
-
-# _print_protected_methods()
+from benedict import *
+import sys
 
 
 TESTDICT = {
@@ -33,23 +29,47 @@ TESTDICT = {
 }
 
 
+ORDERED_TESTDICT = OrderedDict(TESTDICT)
+
+
 class MyDict(BeneDict):
     def show_config(self):
         print('MyDict method', self.to_dict())
 
 
-def test_1():
-    a = BeneDict({'keys': BeneDict({'items': 100, 'get': 66, 'update': 77})})
+class MyOrderedDict(OrderedBeneDict):
+    def show_config(self):
+        print('MyOrderedDict method', self.to_dict())
+
+
+@pytest.fixture(params=[BeneDict, OrderedBeneDict, MyDict, MyOrderedDict])
+def Dtype(request):
+    """
+    https://docs.pytest.org/en/latest/fixture.html
+    """
+    return request.param
+
+
+@pytest.fixture(params=[OrderedBeneDict, MyOrderedDict])
+def OrderedDtype(request):
+    """
+    https://docs.pytest.org/en/latest/fixture.html
+    """
+    return request.param
+
+
+def test_1(Dtype):
+    a = Dtype({'keys': Dtype({'items': 100, 'get': 66, 'update': 77})})
     b = a.deepcopy()
     b.keys.items = 120
     assert a.keys.items == 100
     assert a.keys.update == 77
     with pytest.raises(ValueError):
-        BeneDict({'keys': BeneDict({'builtin_items': 100, 'get': 66})})
+        Dtype({'keys': Dtype({'builtin_items': 100, 'get': 66})})
 
 
-def test_2():
-    a = BeneDict({'keys2': {'items2': 100, 'get2': 66, 'values':10}})
+def test_2(Dtype):
+    a = Dtype({'keys2': {'items2': 100, 'get2': 66, 'values':10}})
     b = a.deepcopy()
     b.keys2.items2 = 120
     aib = pickle.dumps(b)
@@ -58,8 +78,8 @@ def test_2():
     print(aib.keys2.get2)
 
 
-def test_big():
-    D = BeneDict(TESTDICT)
+def test_big(Dtype):
+    D = Dtype(TESTDICT)
     assert D.a0[0].a1 == 2
     assert D.b0.c1[0].a2 == 11
     assert D.b0.c1[1].b2 == 13
@@ -93,14 +113,14 @@ def test_myclass():
         D.b0.builtin_show_config = 'overriden'
 
 
-def test_deepcopy():
-    D = MyDict(TESTDICT)
+def test_deepcopy(Dtype):
+    D = Dtype(TESTDICT)
     D_copy = D.deepcopy()
     D_copy.b0._a1 = 'changed'
     assert D.b0._a1 == 108
 
 
-def test_json():
+def test_json(Dtype):
     """
     Warning: JSON keys must be strings
     """
@@ -121,15 +141,44 @@ def test_json():
         },
         '0c': 200,
     }
-    D = MyDict(JSON_TESTDICT)
+    D = Dtype(JSON_TESTDICT)
     file_path = '~/Temp/test.json'
     D.dump_file(file_path)
-    D_loaded = MyDict.load_file(file_path)
+    D_loaded = Dtype.load_file(file_path)
     assert D == D_loaded
 
-def test_yaml():
-    D = MyDict(TESTDICT)
+
+def test_yaml(Dtype):
+    D = Dtype(TESTDICT)
     file_path = '~/Temp/test.yml'
     D.dump_file(file_path)
-    D_loaded = MyDict.load_file(file_path)
+    D_loaded = Dtype.load_file(file_path)
     assert D == D_loaded
+
+
+def test_ordered_insert(Dtype):
+    """
+    Notes:
+        Python 3.6, all dict insertion order is guaranteed,
+            vanilla BeneDict will also pass this test
+        Python 3.5, only OrderedBeneDict will pass this test
+        Python 3.4 will simply crash due to OrderedDict internal problem
+    """
+    D = Dtype()
+    O = OrderedDict()
+    nums = [10, 7, 2, 8, 4, 1, 3, 9, 5, 6]
+
+    for i in nums:
+        key = 'k{}'.format(i)
+        O[key] = i
+        setattr(D, key, i)
+
+    D_items = list(D.to_dict().items())
+    O_items = list(O.items())
+
+    if (Dtype in [OrderedBeneDict, MyOrderedDict]
+        or sys.version_info.minor >= 6):  # py 3.6 order guaranteed
+        print(D_items)
+        assert D_items == O_items
+
+
