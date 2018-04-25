@@ -8,22 +8,10 @@ Adapted from: https://github.com/makinacorpus/EasyDict
 """
 import benedict.data_format as df
 from benedict.core import (
-    BeneDict, benedict_to_dict, get_benedict_protected_methods
+    BeneDict, benedict_to_dict, _Builtin
 )
 from collections import OrderedDict
 import collections.abc as abc
-
-
-def _builtin_name(method_name):
-    return 'builtin_' + method_name
-
-
-def _original_name(builtin_name):
-    return builtin_name[len('builtin_'):]
-
-
-def _is_builtin(method_name):
-    return method_name.startswith('builtin_')
 
 
 class OrderedBeneDict(OrderedDict):
@@ -47,9 +35,9 @@ class OrderedBeneDict(OrderedDict):
         for attr_name in dir(cls):
             attr = getattr(cls, attr_name)
             if (not attr_name.startswith('_')
-                    and not _is_builtin(attr_name)
+                    and not _Builtin.is_(attr_name)
                     and callable(attr)):
-                protected_name = _builtin_name(attr_name)
+                protected_name = _Builtin.convert(attr_name)
                 setattr(cls, protected_name, attr)
                 protected_methods.append(protected_name)
         cls._PROTECTED_METHODS = protected_methods
@@ -84,7 +72,7 @@ class OrderedBeneDict(OrderedDict):
             value = type(value)(cls(x) if isinstance(x, abc.Mapping) else x
                                 for x in value)
         elif isinstance(value, abc.Mapping):
-            # implements deepcopy if BeneDict(BeneDict())
+            # implements deepcopy if OrderedBeneDict(OrderedBeneDict())
             # to make it shallow copy, add the following condition:
             # ...  and not isinstance(value, self.__class__)):
             value = cls(value)
@@ -207,16 +195,5 @@ def benedict_to_ordereddict(D):
     return benedict_to_dict(D, to_type=OrderedDict)
 
 
-def _print_protected_methods():
-    "paste the generated code into BeneDict class for PyCharm convenience"
-    for method in [m for m in dir(OrderedDict) if not m.startswith('_')]:
-        print('{} = OrderedDict.{}'.format(_builtin_name(method), method))
-
-    for protected in get_benedict_protected_methods(OrderedBeneDict):
-        original_name = _original_name(protected)
-        if original_name not in dir(OrderedDict):
-            print('{} = {}'.format(protected, original_name))
-
-
 if __name__ == '__main__':
-    _print_protected_methods()
+    _Builtin.print_protected(OrderedDict)

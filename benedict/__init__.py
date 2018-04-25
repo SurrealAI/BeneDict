@@ -1,5 +1,5 @@
 from .core import (
-    BeneDict, benedict_to_dict, get_benedict_protected_methods
+    BeneDict, benedict_to_dict
 )
 from .ordered import (
     OrderedBeneDict, benedict_to_ordereddict

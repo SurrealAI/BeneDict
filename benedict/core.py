@@ -11,25 +11,53 @@ import collections.abc as abc
 import benedict.data_format as df
 
 
-def _builtin_name(method_name):
-    return 'builtin_' + method_name
+class _Builtin:
+    "staticmethods only, nothing but logical grouping of functions"
 
+    @staticmethod
+    def convert(method_name):
+        return 'builtin_' + method_name
 
-def _original_name(builtin_name):
-    return builtin_name[len('builtin_'):]
+    @staticmethod
+    def restore(builtin_name):
+        return builtin_name[len('builtin_'):]
 
+    @staticmethod
+    def is_(method_name):
+        "is it a builtin method?"
+        return method_name.startswith('builtin_')
 
-def _is_builtin(method_name):
-    return method_name.startswith('builtin_')
+    @staticmethod
+    def get_protected(d):
+        """
+        Can be applied to BeneDict itself or any class that inherits from BeneDict
 
+        Args:
+            d: a BeneDict or subclass object or class
 
-def _benedict_init(classes, self, *args, **kwargs):
-    """
-    BeneDict and OrderedBeneDict init method
+        Returns:
+            list of protected method names
+        """
+        if inspect.isclass(d):
+            try:
+                d = d()  # only applies to classes that can take no args
+            except:
+                raise ValueError('please pass in a concrete object of your class')
+        return [
+            attr_name for attr_name in dir(d)
+            if _Builtin.is_(attr_name) and callable(getattr(d, attr_name))
+        ]
 
-    classes: check instance of BeneDict or OrderedBeneDict
-    """
-    pass
+    @staticmethod
+    def print_protected(builtin_type):
+        "paste the generated code into BeneDict class for PyCharm convenience"
+        for method in [m for m in dir(builtin_type) if not m.startswith('_')]:
+            print('{} = dict.{}'.format(_Builtin.convert(method), method))
+
+        for protected in _Builtin.get_protected(BeneDict):
+            original_name = _Builtin.restore(protected)
+            if original_name not in dir(builtin_type):
+                print('{} = {}'.format(protected, original_name))
 
 
 class BeneDict(dict):
@@ -129,9 +157,9 @@ class BeneDict(dict):
         for attr_name in dir(cls):
             attr = getattr(cls, attr_name)
             if (not attr_name.startswith('_')
-                    and not _is_builtin(attr_name)
+                    and not _Builtin.is_(attr_name)
                     and callable(attr)):
-                protected_name = _builtin_name(attr_name)
+                protected_name = _Builtin.convert(attr_name)
                 setattr(cls, protected_name, attr)
                 protected_methods.append(protected_name)
         cls._PROTECTED_METHODS = protected_methods
@@ -301,37 +329,5 @@ def benedict_to_dict(D, to_type=dict):
     return d
 
 
-def get_benedict_protected_methods(d):
-    """
-    Can be applied to BeneDict itself or any class that inherits from BeneDict
-
-    Args:
-        d: a BeneDict or subclass object or class
-
-    Returns:
-        list of protected method names
-    """
-    if inspect.isclass(d):
-        try:
-            d = d()  # only applies to classes that can take no args
-        except:
-            raise ValueError('please pass in a concrete object of your class')
-    return [
-        attr_name for attr_name in dir(d)
-        if _is_builtin(attr_name) and callable(getattr(d, attr_name))
-    ]
-
-
-def _print_protected_methods():
-    "paste the generated code into BeneDict class for PyCharm convenience"
-    for method in [m for m in dir(dict) if not m.startswith('_')]:
-        print('{} = dict.{}'.format(_builtin_name(method), method))
-
-    for protected in get_benedict_protected_methods(BeneDict):
-        original_name = _original_name(protected)
-        if original_name not in dir(dict):
-            print('{} = {}'.format(protected, original_name))
-
-
 if __name__ == '__main__':
-    _print_protected_methods()
+    _Builtin.print_protected(dict)
