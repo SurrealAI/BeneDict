@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name='BeneDict',
-    version='0.2',
+    version='0.3',
     author='Jim Fan',
     url='http://github.com/SurrealAI/BeneDict',
     description='',
@@ -18,15 +18,15 @@ setup(
               'utility'],
     license='GPLv3',
     packages=['benedict'],
-    # entry_points={
-    #     'console_scripts': [
-    #     ]
-    # },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Programming Language :: Python :: 3"
     ],
     include_package_data=True,
-    zip_safe=False
+    zip_safe=False,
+    install_requires=[
+        'pyyaml',
+    ],
+    python_requires='>=3.5',
 )
