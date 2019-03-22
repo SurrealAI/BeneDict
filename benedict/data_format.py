@@ -22,7 +22,7 @@ def load_json_str(string, **kwargs):
 def dump_json_file(data, file_path, **kwargs):
     file_path = path.expanduser(file_path)
     with open(file_path, 'w') as fp:
-        indent = kwargs.get('indent', 4)
+        indent = kwargs.pop('indent', 4)
         json.dump(data, fp, indent=indent, **kwargs)
 
 
@@ -49,8 +49,8 @@ def load_yaml_str(string, *, loader=yaml.load, **kwargs):
 
 def dump_yaml_file(data, file_path, *, dumper=yaml.dump, **kwargs):
     file_path = path.expanduser(file_path)
-    indent = kwargs.get('indent', 2)
-    default_flow_style = kwargs.get('default_flow_style', False)
+    indent = kwargs.pop('indent', 2)
+    default_flow_style = kwargs.pop('default_flow_style', False)
     with open(file_path, 'w') as fp:
         dumper(
             data,
@@ -64,8 +64,8 @@ def dump_yaml_file(data, file_path, *, dumper=yaml.dump, **kwargs):
 def dump_yaml_str(data, *, dumper=yaml.dump, **kwargs):
     "Returns: string"
     stream = StringIO()
-    indent = kwargs.get('indent', 2)
-    default_flow_style = kwargs.get('default_flow_style', False)
+    indent = kwargs.pop('indent', 2)
+    default_flow_style = kwargs.pop('default_flow_style', False)
     dumper(
         data,
         stream,
