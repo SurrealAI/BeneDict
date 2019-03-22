@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name='BeneDict',
-    version='0.3',
+    version='0.3.1',
     author='Jim Fan',
     url='http://github.com/SurrealAI/BeneDict',
     description='',
