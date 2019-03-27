@@ -37,13 +37,13 @@ ordered_dump_json_file = dump_json_file
 ordered_dump_json_str = dump_json_str
 
 
-def load_yaml_file(file_path, *, loader=yaml.load, **kwargs):
+def load_yaml_file(file_path, *, loader=yaml.safe_load, **kwargs):
     file_path = path.expanduser(file_path)
     with open(file_path, 'r') as fp:
         return loader(fp, **kwargs)
 
 
-def load_yaml_str(string, *, loader=yaml.load, **kwargs):
+def load_yaml_str(string, *, loader=yaml.safe_load, **kwargs):
     return loader(string, **kwargs)
 
 
@@ -77,7 +77,7 @@ def dump_yaml_str(data, *, dumper=yaml.dump, **kwargs):
 
 
 def _ordered_load_stream_yaml(stream,
-                              Loader=yaml.Loader,
+                              Loader=yaml.SafeLoader,
                               object_pairs_hook=OrderedDict):
     """
     https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
