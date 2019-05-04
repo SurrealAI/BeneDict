@@ -47,7 +47,7 @@ def load_yaml_str(string, *, loader=yaml.safe_load, **kwargs):
     return loader(string, **kwargs)
 
 
-def dump_yaml_file(data, file_path, *, dumper=yaml.dump, **kwargs):
+def dump_yaml_file(data, file_path, *, dumper=yaml.safe_dump, **kwargs):
     file_path = path.expanduser(file_path)
     indent = kwargs.pop('indent', 2)
     default_flow_style = kwargs.pop('default_flow_style', False)
@@ -61,7 +61,7 @@ def dump_yaml_file(data, file_path, *, dumper=yaml.dump, **kwargs):
         )
 
 
-def dump_yaml_str(data, *, dumper=yaml.dump, **kwargs):
+def dump_yaml_str(data, *, dumper=yaml.safe_dump, **kwargs):
     "Returns: string"
     stream = StringIO()
     indent = kwargs.pop('indent', 2)
